@@ -87,11 +87,15 @@ app.put(
     if (!errors.isEmpty()) {
       return res.status(422).json({ errors: errors.array() });
     }
-    const idEmployee = req.params.id;
+    const idUser = req.params.id;
     const formData = req.body;
-    return connection.query('UPDATE user SET ? WHERE id = ?', [formData, idEmployee], (err, results) => {
+    return connection.query('UPDATE user SET ? WHERE id = ?', [formData, idUser], (err, results) => {
       if (err) {
-        // If an error has occurred, then the client is informed of the error
+        if (err.code === 'ER_DUP_ENTRY') {
+          return res.status(409).json({
+            error: 'Email already exists',
+          });
+        }
         return res.status(500).json({
           error: err.message,
           sql: err.sql,
@@ -99,7 +103,7 @@ app.put(
         });
       }
 
-    return connection.query('SELECT * FROM user WHERE id = ?', req.params.id, (err2, records) => {
+    return connection.query('SELECT * FROM user WHERE id = ?', idUser, (err2, records) => {
       if (err2) {
         return res.status(500).json({
           error: err2.message,
